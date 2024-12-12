@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "196435337829",
+    "project_id": "peerdrive-8011d",
+    "storage_bucket": "peerdrive-8011d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:196435337829:android:6657f6beeaf2d4fc809c8c",
+        "android_client_info": {
+          "package_name": "com.example.peerdrive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB24KOwJ0NwubIV9axlokRtwBS_PA3w1nk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
