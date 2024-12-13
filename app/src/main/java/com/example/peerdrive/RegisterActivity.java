@@ -1,70 +1,109 @@
 package com.example.peerdrive;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
+import okhttp3.*;
+
+import java.io.IOException;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private EditText etName, etEmail, etPassword, etConfirmPassword;
+    private RadioGroup rgUserType;
+    private EditText etName, etEmail, etPassword, etPlate, etModel, etColor;
+    private LinearLayout layoutCarDetails;
     private Button btnRegister;
-    private TextView tvLogin;
-
-    private RegisterService registerService = new RegisterService(); // Servicio simulado
+    private String userType = "Pasajero"; // Valor predeterminado
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        rgUserType = findViewById(R.id.rgUserType);
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
-        etConfirmPassword = findViewById(R.id.etConfirmPassword);
+        etPlate = findViewById(R.id.etPlate);
+        etModel = findViewById(R.id.etModel);
+        etColor = findViewById(R.id.etColor);
+        layoutCarDetails = findViewById(R.id.layoutCarDetails);
         btnRegister = findViewById(R.id.btnRegister);
-        tvLogin = findViewById(R.id.tvLogin);
 
-        btnRegister.setOnClickListener(v -> handleRegister());
-        tvLogin.setOnClickListener(v -> {
-            // Redirigir a la pantalla de login
-            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-            startActivity(intent);
+        // Mostrar u ocultar detalles del coche según el tipo de usuario
+        rgUserType.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbConductor) {
+                userType = "driver";
+                layoutCarDetails.setVisibility(View.VISIBLE);
+            } else {
+                userType = "passenger";
+                layoutCarDetails.setVisibility(View.GONE);
+            }
         });
+
+        // Manejo del botón de registro
+        btnRegister.setOnClickListener(v -> registerUser());
     }
 
-    private void handleRegister() {
+    private void registerUser() {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
-        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Completa todos los campos obligatorios", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!registerService.validatePassword(password, confirmPassword)) {
-            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
-            return;
+        // Datos específicos del conductor
+        String plate = null, model = null, color = null;
+        if (userType.equals("driver")) {
+            plate = etPlate.getText().toString().trim();
+            model = etModel.getText().toString().trim();
+            color = etColor.getText().toString().trim();
+            if (plate.isEmpty() || model.isEmpty() || color.isEmpty()) {
+                Toast.makeText(this, "Completa los detalles del coche", Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
 
-        boolean isRegistered = registerService.register(email, password);
-        if (isRegistered) {
-            Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show();
-            Log.d("RegisterActivity", "Usuario registrado con éxito.");
-            // Redirigir a la pantalla de login
-            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-            startActivity(intent);
-        } else {
-            Toast.makeText(this, "El usuario ya existe", Toast.LENGTH_SHORT).show();
-            Log.w("RegisterActivity", "Intento de registro fallido: usuario ya existente.");
-        }
+        // Crear JSON para la solicitud
+        String json = createRegisterJson(name, email, password, plate, model, color);
+
+        // Realizar solicitud al backend
+        String url = "http://192.168.100.127:3000/users/register";
+        OkHttpClient client = new OkHttpClient();
+        RequestBody body = RequestBody.create(MediaType.parse("application/json"), json);
+        Log.i("RegisterActivity", "Body enviado: " + body);
+        Request request = new Request.Builder().url(url).post(body).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> Toast.makeText(RegisterActivity.this, "Error al conectarse al servidor", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
+                String responseMessage = response.body().string();
+
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
+                } else {
+                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
+    }
+
+    private String createRegisterJson(String name, String email, String password, String plate, String model, String color) {
+        return userType.equals("driver") ?
+                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"carDetails\":{\"plate\":\"%s\",\"model\":\"%s\",\"color\":\"%s\"}}",
+                        userType, name, email, password, plate, model, color) :
+                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}",
+                        userType, name, email, password);
     }
 }

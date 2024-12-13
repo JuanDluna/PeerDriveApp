@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Mapa como fondo -->
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Contenedor para los inputs flotantes -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:layout_gravity="top"
+        android:background="@color/cardview_light_background">
+
+        <!-- Fragmento para autocompletar dirección de origen -->
+        <fragment
+            android:id="@+id/autocompleteOrigin"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Espaciado -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp" />
+
+        <!-- Fragmento para autocompletar dirección de destino -->
+        <fragment
+            android:id="@+id/autocompleteDestination"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- Botón flotante para calcular la ruta -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnCalculateRoute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_route"
+        android:contentDescription="Calcular ruta"
+        android:tint="@android:color/white"
+        android:backgroundTint="@color/colorPrimary" />
+</FrameLayout>

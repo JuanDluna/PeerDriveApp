@@ -1,63 +1,74 @@
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp">
 
-    <LinearLayout
+    <!-- Campo para seleccionar tipo de usuario -->
+    <RadioGroup
+        android:id="@+id/rgUserType"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <EditText
-            android:id="@+id/etName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Nombre completo"
-            android:inputType="textPersonName"
-            android:padding="8dp" />
-
-        <EditText
-            android:id="@+id/etEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Correo electrónico"
-            android:inputType="textEmailAddress"
-            android:padding="8dp"
-            android:layout_marginTop="8dp" />
-
-        <EditText
-            android:id="@+id/etPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Contraseña"
-            android:inputType="textPassword"
-            android:padding="8dp"
-            android:layout_marginTop="8dp" />
-
-        <EditText
-            android:id="@+id/etConfirmPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Confirmar contraseña"
-            android:inputType="textPassword"
-            android:padding="8dp"
-            android:layout_marginTop="8dp" />
-
-        <Button
-            android:id="@+id/btnRegister"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Registrarse"
-            android:layout_marginTop="16dp" />
-
-        <TextView
-            android:id="@+id/tvLogin"
+        android:layout_height="wrap_content">
+        <RadioButton
+            android:id="@+id/rbConductor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="¿Ya tienes cuenta? Inicia sesión"
-            android:textColor="@android:color/holo_blue_dark"
-            android:layout_marginTop="16dp"
-            android:gravity="center" />
+            android:text="Conductor" />
+        <RadioButton
+            android:id="@+id/rbPasajero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pasajero" />
+    </RadioGroup>
+
+    <!-- Campos comunes -->
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nombre completo" />
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Correo electrónico"
+        android:inputType="textEmailAddress" />
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Contraseña"
+        android:inputType="textPassword" />
+
+    <!-- Campos del conductor -->
+    <LinearLayout
+        android:id="@+id/layoutCarDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <EditText
+            android:id="@+id/etPlate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Placas" />
+        <EditText
+            android:id="@+id/etModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Modelo" />
+        <EditText
+            android:id="@+id/etColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Color" />
     </LinearLayout>
-</ScrollView>
+
+    <!-- Botón para registrar -->
+    <Button
+        android:id="@+id/btnRegister"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Registrar" />
+</LinearLayout>
