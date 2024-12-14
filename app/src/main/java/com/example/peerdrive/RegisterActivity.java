@@ -10,7 +10,7 @@ import okhttp3.*;
 import java.io.IOException;
 
 public class RegisterActivity extends AppCompatActivity {
-
+    private String backendIP = "";
     private RadioGroup rgUserType;
     private EditText etName, etEmail, etPassword, etPlate, etModel, etColor;
     private LinearLayout layoutCarDetails;
@@ -21,6 +21,8 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        backendIP = getString(R.string.backendIP);
+        Log.i("RegisterActivity", "Backend IP: " + backendIP);
 
         rgUserType = findViewById(R.id.rgUserType);
         etName = findViewById(R.id.etName);
@@ -73,10 +75,11 @@ public class RegisterActivity extends AppCompatActivity {
         String json = createRegisterJson(name, email, password, plate, model, color);
 
         // Realizar solicitud al backend
-        String url = "http://192.168.100.127:3000/users/register";
+        String url = backendIP + "/users/register";
+        Log.i("RegisterActivity", "URL: " + url);
+
         OkHttpClient client = new OkHttpClient();
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), json);
-        Log.i("RegisterActivity", "Body enviado: " + body);
         Request request = new Request.Builder().url(url).post(body).build();
 
         client.newCall(request).enqueue(new Callback() {

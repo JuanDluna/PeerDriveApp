@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">PeerDrive</string>
+    <string name="app_name">PeerDrive</string>+
+    <string name="backendIP">http://192.168.100.127:3000</string>
 </resources>
