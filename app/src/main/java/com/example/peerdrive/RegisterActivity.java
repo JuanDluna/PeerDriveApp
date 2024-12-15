@@ -1,5 +1,7 @@
 package com.example.peerdrive;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -94,7 +96,11 @@ public class RegisterActivity extends AppCompatActivity {
                 String responseMessage = response.body().string();
 
                 if (response.isSuccessful()) {
+                    saveUserSession(name, userType);
                     runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
+                    Intent intent = new Intent(RegisterActivity.this, RouteActivity.class);
+                    startActivity(intent);
+                    finish();
                 } else {
                     runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
                 }
@@ -108,5 +114,19 @@ public class RegisterActivity extends AppCompatActivity {
                         userType, name, email, password, plate, model, color) :
                 String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}",
                         userType, name, email, password);
+    }
+
+    private void saveUserSession(String name, String userType) {
+        String nameSharedPreferences = getString(R.string.nameSharedPreferences);
+        String namePreferences = getString(R.string.namePreferences);
+        String typePreferences = getString(R.string.typePreferences);
+        String isLoggedInPreferences = getString(R.string.isLoggedInPreferences);
+
+        SharedPreferences sharedPreferences = getSharedPreferences(nameSharedPreferences, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(namePreferences, name);
+        editor.putString(typePreferences, userType);
+        editor.putBoolean(isLoggedInPreferences, true);
+        editor.apply();
     }
 }

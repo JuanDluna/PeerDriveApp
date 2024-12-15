@@ -1,13 +1,20 @@
 package com.example.peerdrive;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -55,8 +62,34 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_route);
 
+        String nameSharedPreferences = getString(R.string.nameSharedPreferences);
+        String typePreferences = getString(R.string.typePreferences);
+        String userNamePreferences = getString(R.string.namePreferences);
+
+        SharedPreferences sharedPreferences = getSharedPreferences(nameSharedPreferences, MODE_PRIVATE);
+        String userType = sharedPreferences.getString(typePreferences, "");
+        String userName = sharedPreferences.getString(userNamePreferences, "");
+
+        if (userType.equals("driver")) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, new DriverFragment())
+                    .commit();
+        } else if (userType.equals("passenger")) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, new PassengerFragment())
+                    .commit();
+        } else {
+            Toast.makeText(this, "Error: Tipo de usuario desconocido", Toast.LENGTH_SHORT).show();
+        }
+
         btnCalculateRoute = findViewById(R.id.btnCalculateRoute);
         btnCalculateRoute.setOnClickListener(v -> calculateRoute());
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Mostrar el nombre del usuario en la barra superior
+        getSupportActionBar().setTitle("Bienvenido, " + userName);
 
         // Inicializar Places API
         String apiKey = getString(R.string.google_maps_key);
@@ -67,6 +100,37 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         createFragment();
         setupAutocomplete();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflar el menú en la barra superior
+        getMenuInflater().inflate(R.menu.menu_route, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_logout) {
+            logout();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void logout() {
+        String nameSharedPreferences = getString(R.string.nameSharedPreferences);
+        // Eliminar las preferencias guardadas
+        SharedPreferences sharedPreferences = getSharedPreferences(nameSharedPreferences, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear(); // Borra todos los datos
+        editor.apply();
+
+        // Mostrar mensaje y redirigir al inicio de sesión
+        Toast.makeText(this, "Sesión cerrada", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(RouteActivity.this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void createFragment() {
@@ -128,12 +192,12 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
                         googleMap.addMarker(new MarkerOptions().position(originLatLng).title("Origen"));
                     }
                 }
-
                 @Override
                 public void onError(@NonNull com.google.android.gms.common.api.Status status) {
                     Toast.makeText(RouteActivity.this, "Error al seleccionar origen: " + status.getStatusMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
+
         }
 
         if (autocompleteDestination != null) {

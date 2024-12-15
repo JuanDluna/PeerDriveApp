@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">PeerDrive</string>+
     <string name="backendIP">http://192.168.100.127:3000</string>
+
+    <string name="nameSharedPreferences">PeerDrivePreferences</string>
+    <string name="namePreferences">name</string>
+    <string name="typePreferences">type</string>
+    <string name="isLoggedInPreferences">isLoggedIn</string>
+
+
 </resources>

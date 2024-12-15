@@ -1,54 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Mapa como fondo -->
-    <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <!-- Barra superior -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <!-- Contenedor para los inputs flotantes -->
-    <LinearLayout
-        android:orientation="vertical"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:layout_gravity="top"
-        android:background="@color/cardview_light_background">
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize">
 
-        <!-- Fragmento para autocompletar dirección de origen -->
+        <!-- Mapa como fondo -->
         <fragment
-            android:id="@+id/autocompleteOrigin"
-            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="match_parent" />
 
-        <!-- Espaciado -->
-        <View
+        <!-- Contenedor para los inputs flotantes -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="8dp" />
+            android:layout_height="match_parent"
+            android:padding="16dp">
 
-        <!-- Fragmento para autocompletar dirección de destino -->
-        <fragment
-            android:id="@+id/autocompleteDestination"
-            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/rounded_background"
+                android:elevation="8dp"
+                android:layout_margin="16dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Botón flotante para calcular la ruta -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/btnCalculateRoute"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_route"
-        android:contentDescription="Calcular ruta"
-        android:tint="@android:color/white"
-        android:backgroundTint="@color/colorPrimary" />
-</FrameLayout>
+                <!-- Botón para mostrar opciones -->
+                <ImageView
+                    android:id="@+id/btnOptionsOrigin"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_more_vert"
+                    android:contentDescription="Opciones" />
+
+                <!-- Fragmento para autocompletar dirección de origen -->
+                <fragment
+                    android:id="@+id/autocompleteOrigin"
+                    android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="16dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/autocompleteDestination" />
+
+                <!-- Botón para mostrar opciones -->
+                <ImageView
+                    android:id="@+id/btnOptionsDestination"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_below="@id/autocompleteOrigin"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_more_vert"
+                    android:contentDescription="Opciones" />
+
+                <fragment
+                    android:id="@+id/autocompleteDestination"
+                    android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="16dp"
+                    app:layout_constraintTop_toBottomOf="@id/autocompleteOrigin"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+            </LinearLayout>
+
+
+            <!-- Botón flotante para calcular la ruta -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnCalculateRoute"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:src="@drawable/ic_route"
+                android:contentDescription="Calcular ruta"
+                android:tint="@android:color/white"
+                android:backgroundTint="@color/colorPrimary"
+                app:layout_constraintBottom_toTopOf="@id/fragmentContainer"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Contenedor para los fragmentos -->
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/fragmentContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

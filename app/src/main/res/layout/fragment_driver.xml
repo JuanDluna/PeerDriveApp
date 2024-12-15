@@ -1,0 +1,55 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/rounded_background">
+
+    <!-- Campo para la cantidad de pasajeros -->
+    <EditText
+        android:id="@+id/etPassengers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Cantidad de pasajeros"
+        android:inputType="number"
+        android:minLines="1"
+        android:maxLines="4" />
+
+    <!-- Campo para la cuota -->
+    <EditText
+        android:id="@+id/etFare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Cuota total deseada"
+        android:inputType="numberDecimal" />
+
+    <!-- Botón para iniciar el conteo -->
+    <Button
+        android:id="@+id/btnStartCountdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Iniciar Conteo de 15 minutos"
+        android:backgroundTint="@color/colorPrimary"
+        android:textColor="@android:color/white" />
+
+    <!-- TextView para mostrar el tiempo restante -->
+    <TextView
+        android:id="@+id/tvCountdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tiempo restante: 15:00"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textSize="16sp" />
+
+    <!-- Botón para comenzar viaje -->
+    <Button
+        android:id="@+id/btnStartTrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Comenzar Viaje"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"
+        android:visibility="gone" />
+</LinearLayout>

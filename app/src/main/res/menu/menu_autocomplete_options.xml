@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/option_current_location"
+        android:title="Usar ubicación actual" />
+    <item
+        android:id="@+id/option_select_on_map"
+        android:title="Seleccionar en el mapa" />
+</menu>
