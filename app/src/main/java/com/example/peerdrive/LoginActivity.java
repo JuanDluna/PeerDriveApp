@@ -85,8 +85,9 @@ public class LoginActivity extends AppCompatActivity {
                         JsonObject userObject = jsonObject.getAsJsonObject("user");
                         String name = userObject.get("name").getAsString();
                         String type = userObject.get("type").getAsString();
+                        String UID = userObject.get("id").getAsString();
 
-                        saveUserSession(name, type);
+                        saveUserSession(UID, name, type);
 
                         runOnUiThread(() -> {
                             Toast.makeText(LoginActivity.this, "Bienvenido, " + name, Toast.LENGTH_SHORT).show();
@@ -108,14 +109,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void saveUserSession(String name, String userType) {
+    private void saveUserSession(String UID, String name, String userType) {
         String nameSharedPreferences = getString(R.string.nameSharedPreferences);
+        String userIdPreferences = getString(R.string.userIdPreferences);
         String namePreferences = getString(R.string.namePreferences);
         String typePreferences = getString(R.string.typePreferences);
         String isLoggedInPreferences = getString(R.string.isLoggedInPreferences);
 
         SharedPreferences sharedPreferences = getSharedPreferences(nameSharedPreferences, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(userIdPreferences, UID);
         editor.putString(namePreferences, name);
         editor.putString(typePreferences, userType);
         editor.putBoolean(isLoggedInPreferences, true);

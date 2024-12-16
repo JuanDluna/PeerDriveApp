@@ -1,55 +1,76 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@drawable/rounded_background">
+    android:background="@drawable/rounded_background"
+    android:padding="16dp">
 
-    <!-- Campo para la cantidad de pasajeros -->
-    <EditText
-        android:id="@+id/etPassengers"
+    <LinearLayout
+        android:id="@+id/llSettingDriver"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Cantidad de pasajeros"
-        android:inputType="number"
-        android:minLines="1"
-        android:maxLines="4" />
+        android:orientation="vertical">
+        <EditText
+            android:id="@+id/etPassengers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Número de pasajeros"
+            android:inputType="number"
+            android:textColorHint="@android:color/darker_gray"
+            android:textColor="@color/black"/>
 
-    <!-- Campo para la cuota -->
-    <EditText
-        android:id="@+id/etFare"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Cuota total deseada"
-        android:inputType="numberDecimal" />
+        <EditText
+            android:id="@+id/etFare"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Cuota a cobrar"
+            android:inputType="numberDecimal"
+            android:textColorHint="@android:color/darker_gray"
+            android:textColor="@color/black"
+            android:layout_marginTop="16dp" />
 
-    <!-- Botón para iniciar el conteo -->
-    <Button
-        android:id="@+id/btnStartCountdown"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Iniciar Conteo de 15 minutos"
-        android:backgroundTint="@color/colorPrimary"
-        android:textColor="@android:color/white" />
+        <Button
+            android:id="@+id/btnStartCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Iniciar cuenta regresiva"
+            android:textColor="@color/white"
+            android:layout_marginTop="16dp" />
 
-    <!-- TextView para mostrar el tiempo restante -->
-    <TextView
-        android:id="@+id/tvCountdown"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tiempo restante: 15:00"
-        android:gravity="center"
-        android:visibility="gone"
-        android:textSize="16sp" />
+    </LinearLayout>
 
-    <!-- Botón para comenzar viaje -->
-    <Button
-        android:id="@+id/btnStartTrip"
+    <LinearLayout
+        android:id="@+id/llCountdown"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Comenzar Viaje"
-        android:backgroundTint="@color/colorAccent"
-        android:textColor="@android:color/white"
-        android:visibility="gone" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tiempo restante: 15:00"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:layout_marginTop="16dp" />
+
+        <Button
+            android:id="@+id/btnCancelTrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancelar viaje"
+            android:layout_marginTop="16dp" />
+
+        <Button
+            android:id="@+id/btnStartTrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Iniciar viaje"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            />
+
+    </LinearLayout>
 </LinearLayout>

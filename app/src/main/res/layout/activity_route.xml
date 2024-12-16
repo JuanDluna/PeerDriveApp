@@ -33,75 +33,66 @@
             android:layout_height="match_parent"
             android:padding="16dp">
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/rounded_background"
-                android:elevation="8dp"
-                android:layout_margin="16dp"
+                android:padding="16dp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
-                <!-- Botón para mostrar opciones -->
-                <ImageView
-                    android:id="@+id/btnOptionsOrigin"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/ic_more_vert"
-                    android:contentDescription="Opciones" />
-
                 <!-- Fragmento para autocompletar dirección de origen -->
-                <fragment
-                    android:id="@+id/autocompleteOrigin"
-                    android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+
+                <ImageView
+                    android:id="@+id/OriginOptions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:src="@drawable/ic_more_vert"
                     android:layout_marginVertical="16dp"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/autocompleteOrigin"
+                    app:layout_constraintBottom_toTopOf="@id/DestinationOptions"/>
+
+                <fragment
+                    android:id="@+id/autocompleteOrigin"
+                    android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="16dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/OriginOptions"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintBottom_toTopOf="@id/autocompleteDestination" />
 
-                <!-- Botón para mostrar opciones -->
                 <ImageView
-                    android:id="@+id/btnOptionsDestination"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_below="@id/autocompleteOrigin"
-                    android:layout_centerVertical="true"
+                    android:id="@+id/DestinationOptions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
                     android:src="@drawable/ic_more_vert"
-                    android:contentDescription="Opciones" />
+                    android:layout_marginVertical="16dp"
+                    app:layout_constraintTop_toBottomOf="@id/OriginOptions"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/autocompleteDestination"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
 
                 <fragment
                     android:id="@+id/autocompleteDestination"
                     android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginVertical="16dp"
                     app:layout_constraintTop_toBottomOf="@id/autocompleteOrigin"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-            </LinearLayout>
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/DestinationOptions"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
 
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- Botón flotante para calcular la ruta -->
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btnCalculateRoute"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="16dp"
-                android:src="@drawable/ic_route"
-                android:contentDescription="Calcular ruta"
-                android:tint="@android:color/white"
-                android:backgroundTint="@color/colorPrimary"
-                app:layout_constraintBottom_toTopOf="@id/fragmentContainer"
-                app:layout_constraintEnd_toEndOf="parent" />
+
 
             <!-- Contenedor para los fragmentos -->
             <androidx.fragment.app.FragmentContainerView

@@ -3,10 +3,16 @@ package com.example.peerdrive;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import okhttp3.*;
 
 import java.io.IOException;
@@ -14,7 +20,7 @@ import java.io.IOException;
 public class RegisterActivity extends AppCompatActivity {
     private String backendIP = "";
     private RadioGroup rgUserType;
-    private EditText etName, etEmail, etPassword, etPlate, etModel, etColor;
+    private EditText etName, etEmail, etPassword, etConfirmPassword, etPhone, etPlate, etModel, etColor;
     private LinearLayout layoutCarDetails;
     private Button btnRegister;
     private String userType = "Pasajero"; // Valor predeterminado
@@ -30,6 +36,8 @@ public class RegisterActivity extends AppCompatActivity {
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        etConfirmPassword = findViewById(R.id.etPasswordConfirm); // Campo para confirmar la contraseña
+        etPhone = findViewById(R.id.etPhone); // Campo para el número telefónico
         etPlate = findViewById(R.id.etPlate);
         etModel = findViewById(R.id.etModel);
         etColor = findViewById(R.id.etColor);
@@ -55,9 +63,18 @@ public class RegisterActivity extends AppCompatActivity {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim(); // Obtener la confirmación de la contraseña
+        String phone = etPhone.getText().toString().trim(); // Obtener el número telefónico
 
-        if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+        // Validar que todos los campos estén llenos
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || phone.isEmpty()) {
             Toast.makeText(this, "Completa todos los campos obligatorios", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validar que las contraseñas coincidan
+        if (!password.equals(confirmPassword)) {
+            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -74,7 +91,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         // Crear JSON para la solicitud
-        String json = createRegisterJson(name, email, password, plate, model, color);
+        String json = createRegisterJson(name, email, password, phone, plate, model, color);
 
         // Realizar solicitud al backend
         String url = backendIP + "/users/register";
@@ -92,12 +109,19 @@ public class RegisterActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-
                 String responseMessage = response.body().string();
 
                 if (response.isSuccessful()) {
-                    saveUserSession(name, userType);
-                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
+                    // Parsear el JSON con Gson
+                    Gson gson = new Gson();
+                    JsonObject jsonObject = gson.fromJson(responseMessage, JsonObject.class);
+
+                    // Extraer datos del usuario
+                    String UID = jsonObject.get("UID").getAsString();
+                    String successMessage = jsonObject.get("message").getAsString();
+
+                    saveUserSession(UID, name, userType);
+                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, successMessage, Toast.LENGTH_SHORT).show());
                     Intent intent = new Intent(RegisterActivity.this, RouteActivity.class);
                     startActivity(intent);
                     finish();
@@ -108,22 +132,24 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
-    private String createRegisterJson(String name, String email, String password, String plate, String model, String color) {
+    private String createRegisterJson(String name, String email, String password, String phone, String plate, String model, String color) {
         return userType.equals("driver") ?
-                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"carDetails\":{\"plate\":\"%s\",\"model\":\"%s\",\"color\":\"%s\"}}",
-                        userType, name, email, password, plate, model, color) :
-                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}",
-                        userType, name, email, password);
+                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"phoneNumber\":\"%s\",\"carDetails\":{\"plate\":\"%s\",\"model\":\"%s\",\"color\":\"%s\"}}",
+                        userType, name, email, password, phone, plate, model, color) :
+                String.format("{\"type\":\"%s\",\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"phoneNumber\":\"%s\"}",
+                        userType, name, email, password, phone);
     }
 
-    private void saveUserSession(String name, String userType) {
+    private void saveUserSession(String UID, String name, String userType) {
         String nameSharedPreferences = getString(R.string.nameSharedPreferences);
+        String userIdPreferences = getString(R.string.userIdPreferences);
         String namePreferences = getString(R.string.namePreferences);
         String typePreferences = getString(R.string.typePreferences);
         String isLoggedInPreferences = getString(R.string.isLoggedInPreferences);
 
         SharedPreferences sharedPreferences = getSharedPreferences(nameSharedPreferences, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(userIdPreferences, UID);
         editor.putString(namePreferences, name);
         editor.putString(typePreferences, userType);
         editor.putBoolean(isLoggedInPreferences, true);
