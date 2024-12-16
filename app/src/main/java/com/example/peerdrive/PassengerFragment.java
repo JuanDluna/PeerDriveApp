@@ -2,6 +2,7 @@ package com.example.peerdrive;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,10 +17,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -36,6 +41,9 @@ import java.time.Instant;
 
 public class PassengerFragment extends Fragment {
 
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100; // Código de solicitud de permisos para las notificaciones
+
+
     private View actualView;
     private View scrollContainer;
     private LinearLayout scrollRouteList;
@@ -48,6 +56,17 @@ public class PassengerFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_passenger, container, false);
+
+        FirebaseMessaging.getInstance().subscribeToTopic("rutas")
+                .addOnCompleteListener(task -> {
+                    String msg = "Suscrito al topic";
+                    if (!task.isSuccessful()) {
+                        msg = "No se pudo suscribirse";
+                    }
+                    Log.d(TAG, msg);
+                    Toast.makeText(requireActivity(), msg, Toast.LENGTH_SHORT).show();
+                });
+
 
         actualView = view;
 
@@ -325,31 +344,34 @@ public class PassengerFragment extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                JsonObject jsonObject = new Gson().fromJson(e.getMessage(), JsonObject.class);
-
-                String errorMessage = jsonObject.get("error").getAsString();
-
-                Log.e("PassengerFragment", "Error al confirmar la asistencia: " + errorMessage);
-                requireActivity().runOnUiThread(() ->
-                        Toast.makeText(requireActivity(), "Error al confirmar la asistencia. Revisa tu conexión.", Toast.LENGTH_SHORT).show());
+                Log.e("PassengerFragment", "Error al confirmar la asistencia: " + e.getMessage());
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireActivity(), "Error al confirmar la asistencia. Revisa tu conexión.", Toast.LENGTH_SHORT).show();
+                    sendNotification("Error al confirmar asistencia", "Revisa tu conexión a Internet.");
+                });
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     Log.i("PassengerFragment", "Asistencia confirmada");
-                    requireActivity().runOnUiThread(() ->
-                            Toast.makeText(requireActivity(), "Asistencia confirmada exitosamente.", Toast.LENGTH_SHORT).show());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireActivity(), "Asistencia confirmada exitosamente.", Toast.LENGTH_SHORT).show();
+                        sendNotification("Confirmación exitosa", "Asistencia confirmada correctamente.");
+                    });
                 } else {
                     String errorMessage = response.body() != null ? response.body().string() : "Error desconocido";
 
                     Log.e("PassengerFragment", "Error al confirmar la asistencia: " + errorMessage);
-                    requireActivity().runOnUiThread(() ->
-                            Toast.makeText(requireActivity(), "Error del servidor: " + errorMessage, Toast.LENGTH_SHORT).show());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireActivity(), "Error del servidor: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        sendNotification("Error del servidor", errorMessage);
+                    });
                 }
             }
         });
     }
+
 
 
     public void cancelAssistant(String tripId) {
@@ -405,4 +427,33 @@ public class PassengerFragment extends Fragment {
         });
 
     }
+
+
+    private void sendNotification(String title, String message) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(requireActivity(), "default")
+                .setSmallIcon(R.drawable.ic_notification) // Ajusta el drawable al nombre de tu recurso
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireActivity());
+
+        if (ActivityCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // Solicitar permisos si no están concedidos
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+            return;
+        }
+
+        notificationManager.notify(0, builder.build());
+    }
+
+    // Código adicional para manejar la respuesta a la solicitud de permisos
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+        }
+    }
+
+
+
 }

@@ -16,6 +16,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
+
 import java.io.IOException;
 
 import okhttp3.Call;
@@ -96,6 +99,9 @@ public class DriverFragment extends Fragment {
             // Registra el viaje en el backend
             registerTripInBackend(passengers, fare);
 
+            // Envía una notificación a Firebase
+            sendFirebaseNotification("Nuevo viaje iniciado", "El pasajero está esperando.");
+
             // Cambiar a la vista de cuenta regresiva
             SettingDriver.setVisibility(View.GONE);
             Countdown.setVisibility(View.VISIBLE);
@@ -163,6 +169,9 @@ public class DriverFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireActivity(), "Viaje cancelado exitosamente.", Toast.LENGTH_SHORT).show();
 
+                        // Enviar notificación de cancelación
+                        sendFirebaseNotification("Viaje Cancelado", "Tu viaje ha sido cancelado.");
+
                         // Restaurar la vista inicial
                         Countdown.setVisibility(View.GONE);
                         SettingDriver.setVisibility(View.VISIBLE);
@@ -182,9 +191,13 @@ public class DriverFragment extends Fragment {
 
 
     private void startTrip() {
-        Toast.makeText(getActivity(), "¡El viaje ha comenzado!", Toast.LENGTH_SHORT).show();
         // Aquí puedes añadir lógica adicional para manejar el inicio del viaje
+        Toast.makeText(getActivity(), "¡El viaje ha comenzado!", Toast.LENGTH_SHORT).show();
+
+        // Enviar notificación al iniciar el viaje
+        sendFirebaseNotification("Viaje Iniciado", "Tu viaje ha comenzado. ¡Disfruta el trayecto!");
     }
+
 
     private void registerTripInBackend(int passengers, double fare) {
         if (getActivity() instanceof RouteActivity) {
@@ -198,5 +211,15 @@ public class DriverFragment extends Fragment {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
+    }
+
+    private void sendFirebaseNotification(String title, String message) {
+        // Aquí configuras y envías la notificación de Firebase
+        FirebaseMessaging.getInstance().send(
+                new RemoteMessage.Builder("your_notification_topic")
+                        .setMessageId(Integer.toString((int) System.currentTimeMillis()))
+                        .addData("title", title)
+                        .addData("message", message)
+                        .build());
     }
 }

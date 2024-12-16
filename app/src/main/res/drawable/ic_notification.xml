@@ -1,0 +1,10 @@
+<!-- res/drawable/ic_notification.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="48dp"
+    android:width="48dp"
+    android:viewportHeight="24"
+    android:viewportWidth="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,2C6.48,2,2,6.48,2,12c0,4.03,2.98,7.35,6.88,7.93v2.46h5.23v-2.45C15.02,19.36,18,15.05,18,12C18,6.48,13.52,2,12,2z M12,17c-1.1,0-2-.9-2-2s0.9-2,2-2s2,0.9,2,2S13.1,17,12,17z"/>
+</vector>
