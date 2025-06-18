@@ -43,7 +43,6 @@ public class PassengerFragment extends Fragment {
 
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 100; // Código de solicitud de permisos para las notificaciones
 
-
     private View actualView;
     private View scrollContainer;
     private LinearLayout scrollRouteList;
@@ -66,7 +65,6 @@ public class PassengerFragment extends Fragment {
                     Log.d(TAG, msg);
                     Toast.makeText(requireActivity(), msg, Toast.LENGTH_SHORT).show();
                 });
-
 
         actualView = view;
 
@@ -103,13 +101,14 @@ public class PassengerFragment extends Fragment {
 
         if (origin == null || destination == null) {
             Log.e(TAG, "Origen o destino no están configurados");
+            Toast.makeText(requireActivity(), "Seleccione origen y destino", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String url = getString(R.string.backendIP) + "/viajes/find";
         String json = String.format(
                 "{\"origin\":{\"lat\":%.6f,\"lng\":%.6f},\"destination\":{\"lat\":%.6f,\"lng\":%.6f},\"maxFare\":%.2f}",
-                origin.latitude, origin.longitude, destination.latitude, destination.longitude, 1000.0 // Cambia 100.0 según el máximo permitido
+                origin.latitude, origin.longitude, destination.latitude, destination.longitude, 1000.0
         );
 
         OkHttpClient client = new OkHttpClient();
@@ -123,9 +122,9 @@ public class PassengerFragment extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e(TAG, "Error al buscar rutas: " + e.getMessage());
+                Log.e(TAG, "Error al buscar rutas: " + e.getMessage(), e);
                 requireActivity().runOnUiThread(() ->
-                        Toast.makeText(requireActivity(), "Error al buscar rutas", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(requireActivity(), "Error de conexión. Revisa tu red.", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -133,12 +132,18 @@ public class PassengerFragment extends Fragment {
                 if (response.isSuccessful()) {
                     String responseData = response.body().string();
                     Log.i(TAG, "Rutas recibidas: " + responseData);
-                    Gson gson = new Gson();
-                    JsonArray routesArray = gson.fromJson(responseData, JsonArray.class);
-
-                    requireActivity().runOnUiThread(() -> displayRoutes(routesArray));
+                    try {
+                        Gson gson = new Gson();
+                        JsonArray routesArray = gson.fromJson(responseData, JsonArray.class);
+                        requireActivity().runOnUiThread(() -> displayRoutes(routesArray));
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error al parsear respuesta: " + responseData, e);
+                        requireActivity().runOnUiThread(() ->
+                                Toast.makeText(requireActivity(), "Error al procesar rutas", Toast.LENGTH_SHORT).show());
+                    }
                 } else {
-                    Log.e(TAG, "Error en el servidor: " + response.message());
+                    String errorBody = response.body() != null ? response.body().string() : "Sin detalles";
+                    Log.e(TAG, "Error en el servidor: " + response.code() + " - " + errorBody);
                     requireActivity().runOnUiThread(() ->
                             Toast.makeText(requireActivity(), "No se encontraron rutas disponibles", Toast.LENGTH_SHORT).show());
                 }
@@ -154,7 +159,7 @@ public class PassengerFragment extends Fragment {
         // Referencia para el último botón mostrado
         final Button[] lastShownButton = {null};
 
-        if (routesArray.size() == 0) {
+        if (routesArray == null || routesArray.size() == 0) {
             TextView tvNoRoutes = new TextView(requireActivity());
             tvNoRoutes.setText("No se encontraron rutas disponibles");
             tvNoRoutes.setTextColor(Color.RED);
@@ -165,24 +170,45 @@ public class PassengerFragment extends Fragment {
             return;
         }
 
+        int validTripsCount = 0; // Contador de viajes con horario válido
+
         for (int i = 0; i < routesArray.size(); i++) {
-            JsonObject route = routesArray.get(i).getAsJsonObject();
+            JsonObject trip = routesArray.get(i).getAsJsonObject();
 
-            // ID del viaje
-            String tripID = route.get("tripId").getAsString();
-            Log.i("PassengerFragment", "tripID: " + tripID);
+            // Verificar campos requeridos
+            if (!trip.has("id_viaje") || trip.get("id_viaje").isJsonNull() ||
+                    !trip.has("costo") || trip.get("costo").isJsonNull() ||
+                    !trip.has("conductor_nombre") || trip.get("conductor_nombre").isJsonNull() ||
+                    !trip.has("coordenadas_inicio") || trip.get("coordenadas_inicio").isJsonNull() ||
+                    !trip.has("coordenadas_fin") || trip.get("coordenadas_fin").isJsonNull() ||
+                    !trip.has("fecha_hora_inicio") || trip.get("fecha_hora_inicio").isJsonNull()) {
+                Log.e(TAG, "Formato de viaje inválido o campos nulos: " + trip.toString());
+                continue;
+            }
 
-            // Datos del viaje
-            double fare = route.get("fare").getAsDouble();
-            JsonObject origin = route.getAsJsonObject("route").getAsJsonObject("origin");
-            JsonObject destination = route.getAsJsonObject("route").getAsJsonObject("destination");
+            String tripID = trip.get("id_viaje").getAsString();
+            double fare = trip.get("costo").getAsDouble();
+            String driverName = trip.get("conductor_nombre").getAsString() + " " +
+                    (trip.has("conductor_apellido") && !trip.get("conductor_apellido").isJsonNull() ?
+                            trip.get("conductor_apellido").getAsString() : "");
+            String phoneNumber = trip.has("conductor_telefono") && !trip.get("conductor_telefono").isJsonNull() ?
+                    trip.get("conductor_telefono").getAsString() : "N/A";
 
-            // Detalles del conductor
-            String driverName = route.get("driverName").getAsString();
-            String phoneNumber = route.get("phoneNumber").getAsString();
-            String driverCarPlate = route.getAsJsonObject("carDetails").get("plate").getAsString();
-            String driverCarModel = route.getAsJsonObject("carDetails").get("model").getAsString();
-            String driverCarColor = route.getAsJsonObject("carDetails").get("color").getAsString();
+            // Parsear coordenadas
+            LatLng origin = parseCoordinates(trip.get("coordenadas_inicio").getAsString());
+            LatLng destination = parseCoordinates(trip.get("coordenadas_fin").getAsString());
+            if (origin == null || destination == null) {
+                Log.e(TAG, "Coordenadas inválidas en viaje: " + tripID);
+                continue;
+            }
+
+            // Detalles del auto
+            String driverCarPlate = trip.has("auto_placa") && !trip.get("auto_placa").isJsonNull() ?
+                    trip.get("auto_placa").getAsString() : "N/A";
+            String driverCarModel = trip.has("auto_modelo") && !trip.get("auto_modelo").isJsonNull() ?
+                    trip.get("auto_modelo").getAsString() : "N/A";
+            String driverCarColor = trip.has("auto_color") && !trip.get("auto_color").isJsonNull() ?
+                    trip.get("auto_color").getAsString() : "N/A";
 
             // Crear vista de cada ruta
             View routeView = LayoutInflater.from(requireActivity()).inflate(R.layout.item_route, scrollRouteList, false);
@@ -194,13 +220,15 @@ public class PassengerFragment extends Fragment {
             tvFare.setText(String.format("Tarifa: $%.2f", fare));
 
             // Calcula el tiempo restante
-            String scheduleISO = route.get("schedule").getAsString();
+            String scheduleISO = trip.get("fecha_hora_inicio").getAsString();
             TextView tvTimeRemaining = routeView.findViewById(R.id.tvTimeRemaining);
-            startRemainingTimeUpdater(scheduleISO, tvTimeRemaining);
+            boolean isScheduleValid = startRemainingTimeUpdater(scheduleISO, tvTimeRemaining);
 
-            if (tvTimeRemaining.getText().toString().equals("¡Tiempo agotado!")) {
+            if (!isScheduleValid || tvTimeRemaining.getText().toString().equals("¡Tiempo agotado!")) {
                 continue;
             }
+
+            validTripsCount++; // Incrementar contador de viajes válidos
 
             // Botón para confirmar asistencia
             Button btnConfirmAttendance = routeView.findViewById(R.id.btnConfirmAttendance);
@@ -214,10 +242,7 @@ public class PassengerFragment extends Fragment {
                 }
 
                 // Actualizar el mapa para destacar la nueva ruta
-                highlightRouteOnMap(
-                        new LatLng(origin.get("lat").getAsDouble(), origin.get("lng").getAsDouble()),
-                        new LatLng(destination.get("lat").getAsDouble(), destination.get("lng").getAsDouble())
-                );
+                highlightRouteOnMap(origin, destination);
 
                 // Mostrar el botón de confirmación para esta ruta
                 btnConfirmAttendance.setVisibility(View.VISIBLE);
@@ -235,49 +260,84 @@ public class PassengerFragment extends Fragment {
             // Añadir la vista de la ruta a la lista
             scrollRouteList.addView(routeView);
         }
+
+        // Si no hay viajes con horario válido, mostrar mensaje
+        if (validTripsCount == 0) {
+            scrollRouteList.removeAllViews();
+            TextView tvNoRoutes = new TextView(requireActivity());
+            tvNoRoutes.setText("No hay viajes disponibles");
+            tvNoRoutes.setTextColor(Color.RED);
+            tvNoRoutes.setPadding(10, 10, 10, 10);
+            tvNoRoutes.setTextSize(18);
+            tvNoRoutes.setTextAlignment(TextView.TEXT_ALIGNMENT_CENTER);
+            scrollRouteList.addView(tvNoRoutes);
+        }
     }
 
-    private void startRemainingTimeUpdater(String scheduleISO, TextView tvTimeRemaining) {
-        // Parsear la hora de salida a Instant
-        Instant departureTime = Instant.parse(scheduleISO); // Hora en UTC
-        long departureTimeMillis = departureTime.toEpochMilli(); // Convertir a milisegundos
-
-        // Handler para actualizar el tiempo restante periódicamente
-        Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                // Obtener la hora actual en milisegundos
-                long currentTimeMillis = System.currentTimeMillis();
-
-                // Calcular el tiempo restante, incluyendo los 15 minutos adicionales
-                long timeRemaining = (departureTimeMillis + 15 * 60 * 1000) - currentTimeMillis;
-
-                if (timeRemaining > 0) {
-                    // Formatear el tiempo restante a hh:mm:ss
-                     remainingTime = String.format("%02d:%02d:%02d",
-                            (timeRemaining / 1000) / 3600,            // Horas
-                            (timeRemaining / 1000) % 3600 / 60,      // Minutos
-                            (timeRemaining / 1000) % 60);            // Segundos
-
-                    // Actualizar el TextView en el hilo principal
-                    tvTimeRemaining.setText("Tiempo restante: " + remainingTime);
-
-                    // Volver a ejecutar el Runnable después de 1 segundo
-                    handler.postDelayed(this, 1000);
-                } else {
-                    // Si el tiempo se ha agotado, mostrar mensaje
-                    tvTimeRemaining.setText("¡Tiempo agotado!");
-                    fetchAvailableRoutes();
-                    handler.removeCallbacks(this); // Detener actualizaciones
-                }
+    // Método auxiliar para parsear coordenadas "lng,lat"
+    private LatLng parseCoordinates(String coordStr) {
+        try {
+            String[] parts = coordStr.split(",");
+            if (parts.length != 2) {
+                return null;
             }
-        };
-
-        // Ejecutar el Runnable por primera vez
-        handler.post(runnable);
+            double lng = Double.parseDouble(parts[0].trim());
+            double lat = Double.parseDouble(parts[1].trim());
+            return new LatLng(lat, lng);
+        } catch (NumberFormatException | NullPointerException e) {
+            Log.e(TAG, "Error al parsear coordenadas: " + coordStr, e);
+            return null;
+        }
     }
 
+    private boolean startRemainingTimeUpdater(String scheduleISO, TextView tvTimeRemaining) {
+        try {
+            // Convertir formato MySQL (YYYY-MM-DD HH:MM:SS) a ISO 8601
+            String isoFormatted = scheduleISO.replace(" ", "T") + "Z";
+            Instant departureTime = Instant.parse(isoFormatted); // Hora en UTC
+            long departureTimeMillis = departureTime.toEpochMilli(); // Convertir a tiempo en milisegundos
+
+            // Handler para actualizar el tiempo restante periódicamente
+            Handler handler = new Handler();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    // Obtener la hora actual en milisegundos
+                    long currentTimeMillis = System.currentTimeMillis();
+
+                    // Calcular el tiempo restante, incluyendo los 15 minutos adicionales
+                    long timeRemaining = (departureTimeMillis + 15 * 60 * 1000) - currentTimeMillis;
+
+                    if (timeRemaining > 0) {
+                        // Formatear el tiempo restante a hh:mm:ss
+                        remainingTime = String.format("%02d:%02d:%02d",
+                                (timeRemaining / 1000) / 3600,            // Horas
+                                (timeRemaining / 1000) % 3600 / 60,      // Minutos
+                                (timeRemaining / 1000) % 60);            // Segundos
+
+                        // Actualizar el TextView en el hilo principal
+                        tvTimeRemaining.setText("Tiempo restante: " + remainingTime);
+
+                        // Volver a ejecutar el Runnable después de 1 segundo
+                        handler.postDelayed(this, 1000);
+                    } else {
+                        // Si el tiempo se ha agotado, mostrar mensaje
+                        tvTimeRemaining.setText("¡Tiempo agotado!");
+                        fetchAvailableRoutes();
+                        handler.removeCallbacks(this); // Detener actualizaciones
+                    }
+                }
+            };
+
+            // Ejecutar el Runnable por primera vez
+            handler.post(runnable);
+            return true; // Horario válido
+        } catch (Exception e) {
+            Log.e(TAG, "Error al parsear horario: " + scheduleISO, e);
+            tvTimeRemaining.setText("Horario inválido");
+            return false; // Horario inválido
+        }
+    }
 
     private void adjustHeight() {
         scrollContainer.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
@@ -297,8 +357,6 @@ public class PassengerFragment extends Fragment {
 
     private void showDriverDetails(String driverName, String phoneNumber, double fare,
                                    String carPlate, String carModel, String carColor, String tripId) {
-
-
         if (layoutDriverDetails != null) {
             scrollRouteList.removeAllViews();
             scrollRouteList.setOrientation(LinearLayout.VERTICAL);
@@ -361,7 +419,6 @@ public class PassengerFragment extends Fragment {
                     });
                 } else {
                     String errorMessage = response.body() != null ? response.body().string() : "Error desconocido";
-
                     Log.e("PassengerFragment", "Error al confirmar la asistencia: " + errorMessage);
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireActivity(), "Error del servidor: " + errorMessage, Toast.LENGTH_SHORT).show();
@@ -371,8 +428,6 @@ public class PassengerFragment extends Fragment {
             }
         });
     }
-
-
 
     public void cancelAssistant(String tripId) {
         layoutDriverDetails.setVisibility(View.GONE);
@@ -401,11 +456,7 @@ public class PassengerFragment extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                JsonObject jsonObject = new Gson().fromJson(e.getMessage(), JsonObject.class);
-
-                String errorMessage = jsonObject.get("error").getAsString();
-
-                Log.e("PassengerFragment", "Error al cancelar la asistencia: " + errorMessage);
+                Log.e("PassengerFragment", "Error al cancelar la asistencia: " + e.getMessage());
                 requireActivity().runOnUiThread(() ->
                         Toast.makeText(requireActivity(), "Error al cancelar la asistencia. Revisa tu conexión.", Toast.LENGTH_SHORT).show());
             }
@@ -418,16 +469,13 @@ public class PassengerFragment extends Fragment {
                             Toast.makeText(requireActivity(), "Asistencia cancelada exitosamente.", Toast.LENGTH_SHORT).show());
                 } else {
                     String errorMessage = response.body() != null ? response.body().string() : "Error desconocido";
-
                     Log.e("PassengerFragment", "Error al cancelar la asistencia: " + errorMessage);
                     requireActivity().runOnUiThread(() ->
                             Toast.makeText(requireActivity(), "Error del servidor: " + errorMessage, Toast.LENGTH_SHORT).show());
                 }
             }
         });
-
     }
-
 
     private void sendNotification(String title, String message) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(requireActivity(), "default")
@@ -453,7 +501,4 @@ public class PassengerFragment extends Fragment {
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
         }
     }
-
-
-
 }
