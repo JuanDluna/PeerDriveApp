@@ -95,11 +95,11 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
         driverViewModel = new ViewModelProvider(this).get(DriverViewModel.class);
         passengerViewModel = new ViewModelProvider(this).get(PassengerViewModel.class);
 
-        if (userType.equals("driver")) {
+        if (userType.equals("conductor")) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, new DriverFragment())
                     .commit();
-        } else if (userType.equals("passenger")) {
+        } else if (userType.equals("pasajero")) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, new PassengerFragment())
                     .commit();
@@ -164,7 +164,7 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
     private void checkAndCalculateRoute() {
         LatLng origin;
         LatLng destination;
-        if(userType.equals("driver")) {
+        if(userType.equals("conductor")) {
             origin = driverViewModel.getOrigin().getValue();
             destination = driverViewModel.getDestination().getValue();
         }else{
@@ -239,9 +239,9 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
         originMarker = googleMap.addMarker(new MarkerOptions().position(latLng).title("Origen"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
 
-        if (userType.equals("driver"))
+        if (userType.equals("conductor"))
             driverViewModel.setOrigin(latLng); // Actualizar el ViewModel
-        else if (userType.equals("passenger"))
+        else if (userType.equals("pasajero"))
             passengerViewModel.setOrigin(latLng); // Actualizar el ViewModel
 
         // Actualizar el campo de autocompletado
@@ -256,9 +256,9 @@ public class RouteActivity extends AppCompatActivity implements OnMapReadyCallba
         destinationMarker = googleMap.addMarker(new MarkerOptions().position(latLng).title("Destino"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
 
-        if (userType.equals("driver"))
+        if (userType.equals("conductor"))
             driverViewModel.setDestination(latLng); // Actualizar el ViewModel
-        else if (userType.equals("passenger"))
+        else if (userType.equals("pasajero"))
             passengerViewModel.setDestination(latLng); // Actualizar el ViewModel
 
         // Actualizar el campo de autocompletado

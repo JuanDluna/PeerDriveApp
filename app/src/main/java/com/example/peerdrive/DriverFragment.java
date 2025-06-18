@@ -141,7 +141,7 @@ public class DriverFragment extends Fragment {
         }
 
         // URL del backend
-        String url = getString(R.string.backendIP) + "/trips/cancelTrip";
+        String url = getString(R.string.backendIP) + "/viajes/cancelTrip";
 
         // Crear JSON para la solicitud
         String json = String.format("{\"tripId\":%s}", tripId);

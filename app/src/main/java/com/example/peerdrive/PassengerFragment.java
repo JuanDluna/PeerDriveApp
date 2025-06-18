@@ -106,7 +106,7 @@ public class PassengerFragment extends Fragment {
             return;
         }
 
-        String url = getString(R.string.backendIP) + "/trips/find";
+        String url = getString(R.string.backendIP) + "/viajes/find";
         String json = String.format(
                 "{\"origin\":{\"lat\":%.6f,\"lng\":%.6f},\"destination\":{\"lat\":%.6f,\"lng\":%.6f},\"maxFare\":%.2f}",
                 origin.latitude, origin.longitude, destination.latitude, destination.longitude, 1000.0 // Cambia 100.0 según el máximo permitido

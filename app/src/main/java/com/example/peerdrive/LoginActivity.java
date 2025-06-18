@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
@@ -35,11 +36,9 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         tvRegister = findViewById(R.id.tvRegister);
 
-
         btnLogin.setOnClickListener(v -> loginUser());
 
         tvRegister.setOnClickListener(v -> {
-            // Aquí rediriges a la pantalla de registro
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
@@ -54,11 +53,12 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Crear el JSON para la solicitud
         String json = String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
+        Log.i("LoginActivity", "JSON enviado: " + json);
 
-        // Realizar solicitud al backend
-        String url = backendIP + "/users/login";
+        String url = backendIP + "/usuarios/login";
+        Log.i("LoginActivity", "URL de login: " + url);
+
         OkHttpClient client = new OkHttpClient();
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), json);
         Request request = new Request.Builder().url(url).post(body).build();
@@ -66,44 +66,50 @@ public class LoginActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Error al conectarse al servidor", Toast.LENGTH_SHORT).show());
+                Log.e("LoginActivity", "Fallo de conexión con el backend", e);
+                runOnUiThread(() ->
+                        Toast.makeText(LoginActivity.this, "Error al conectarse al servidor", Toast.LENGTH_SHORT).show()
+                );
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
+                String responseBody = response.body().string();
+                Log.i("LoginActivity", "Código HTTP: " + response.code());
+                Log.i("LoginActivity", "Respuesta del servidor: " + responseBody);
+
                 if (response.isSuccessful()) {
-                    // Leer el mensaje del backend
-                    String successMessage = response.body().string();
-                    Log.i("LoginActivity", "Success message: " + successMessage);
-
                     try {
-                        // Parsear el JSON con Gson
                         Gson gson = new Gson();
-                        JsonObject jsonObject = gson.fromJson(successMessage, JsonObject.class);
+                        JsonObject jsonObject = gson.fromJson(responseBody, JsonObject.class);
 
-                        // Extraer datos del usuario
+                        if (!jsonObject.has("user")) {
+                            runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Respuesta inválida del servidor", Toast.LENGTH_SHORT).show());
+                            Log.e("LoginActivity", "Falta el campo 'user' en la respuesta.");
+                            return;
+                        }
+
                         JsonObject userObject = jsonObject.getAsJsonObject("user");
-                        String name = userObject.get("name").getAsString();
-                        String type = userObject.get("type").getAsString();
-                        String UID = userObject.get("id").getAsString();
+                        String name = userObject.get("nombre").getAsString();
+                        String type = userObject.get("tipo_usuario").getAsString();
+                        String UID = userObject.get("id_usuario").getAsString();
 
                         saveUserSession(UID, name, type);
 
                         runOnUiThread(() -> {
                             Toast.makeText(LoginActivity.this, "Bienvenido, " + name, Toast.LENGTH_SHORT).show();
-                            // Redirigir al usuario al dashboard (Conductor o Pasajero)
                             Intent intent = new Intent(LoginActivity.this, RouteActivity.class);
                             startActivity(intent);
                             finish();
                         });
                     } catch (Exception e) {
-                        runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Error al analizar la respuesta del servidor", Toast.LENGTH_SHORT).show());
                         Log.e("LoginActivity", "Error al parsear el JSON", e);
+                        runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Error al procesar los datos", Toast.LENGTH_SHORT).show());
                     }
                 } else {
-                    // Leer el mensaje de error
-                    String errorMessage = response.body().string();
-                    runOnUiThread(() -> Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> {
+                        Toast.makeText(LoginActivity.this, "Error: " + responseBody, Toast.LENGTH_SHORT).show();
+                    });
                 }
             }
         });
@@ -124,8 +130,4 @@ public class LoginActivity extends AppCompatActivity {
         editor.putBoolean(isLoggedInPreferences, true);
         editor.apply();
     }
-
 }
-
-
-

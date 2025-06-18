@@ -47,10 +47,10 @@ public class RegisterActivity extends AppCompatActivity {
         // Mostrar u ocultar detalles del coche según el tipo de usuario
         rgUserType.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbConductor) {
-                userType = "driver";
+                userType = "conductor";
                 layoutCarDetails.setVisibility(View.VISIBLE);
             } else {
-                userType = "passenger";
+                userType = "pasajero";
                 layoutCarDetails.setVisibility(View.GONE);
             }
         });
@@ -59,26 +59,29 @@ public class RegisterActivity extends AppCompatActivity {
         btnRegister.setOnClickListener(v -> registerUser());
     }
 
+// Dentro de RegisterActivity.java
+
     private void registerUser() {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String confirmPassword = etConfirmPassword.getText().toString().trim(); // Obtener la confirmación de la contraseña
-        String phone = etPhone.getText().toString().trim(); // Obtener el número telefónico
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
 
-        // Validar que todos los campos estén llenos
+        Log.i("RegisterActivity", "Datos ingresados - Name: " + name + ", Email: " + email + ", Phone: " + phone);
+
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || phone.isEmpty()) {
             Toast.makeText(this, "Completa todos los campos obligatorios", Toast.LENGTH_SHORT).show();
+            Log.w("RegisterActivity", "Campos vacíos detectados");
             return;
         }
 
-        // Validar que las contraseñas coincidan
         if (!password.equals(confirmPassword)) {
             Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
+            Log.w("RegisterActivity", "Contraseñas no coinciden");
             return;
         }
 
-        // Datos específicos del conductor
         String plate = null, model = null, color = null;
         if (userType.equals("driver")) {
             plate = etPlate.getText().toString().trim();
@@ -86,16 +89,16 @@ public class RegisterActivity extends AppCompatActivity {
             color = etColor.getText().toString().trim();
             if (plate.isEmpty() || model.isEmpty() || color.isEmpty()) {
                 Toast.makeText(this, "Completa los detalles del coche", Toast.LENGTH_SHORT).show();
+                Log.w("RegisterActivity", "Faltan detalles del coche");
                 return;
             }
         }
 
-        // Crear JSON para la solicitud
         String json = createRegisterJson(name, email, password, phone, plate, model, color);
+        Log.i("RegisterActivity", "JSON generado para registro: " + json);
 
-        // Realizar solicitud al backend
-        String url = backendIP + "/users/register";
-        Log.i("RegisterActivity", "URL: " + url);
+        String url = backendIP + "/usuarios/register";
+        Log.i("RegisterActivity", "Enviando POST a: " + url);
 
         OkHttpClient client = new OkHttpClient();
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), json);
@@ -104,33 +107,42 @@ public class RegisterActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.e("RegisterActivity", "Fallo al conectarse al servidor", e);
                 runOnUiThread(() -> Toast.makeText(RegisterActivity.this, "Error al conectarse al servidor", Toast.LENGTH_SHORT).show());
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseMessage = response.body().string();
+                Log.i("RegisterActivity", "Respuesta del servidor: " + responseMessage);
 
                 if (response.isSuccessful()) {
-                    // Parsear el JSON con Gson
-                    Gson gson = new Gson();
-                    JsonObject jsonObject = gson.fromJson(responseMessage, JsonObject.class);
+                    try {
+                        Gson gson = new Gson();
+                        JsonObject jsonObject = gson.fromJson(responseMessage, JsonObject.class);
+                        String UID = jsonObject.get("UID").getAsString();
+                        String successMessage = jsonObject.get("message").getAsString();
 
-                    // Extraer datos del usuario
-                    String UID = jsonObject.get("UID").getAsString();
-                    String successMessage = jsonObject.get("message").getAsString();
+                        Log.i("RegisterActivity", "Registro exitoso - UID: " + UID + ", Mensaje: " + successMessage);
 
-                    saveUserSession(UID, name, userType);
-                    runOnUiThread(() -> Toast.makeText(RegisterActivity.this, successMessage, Toast.LENGTH_SHORT).show());
-                    Intent intent = new Intent(RegisterActivity.this, RouteActivity.class);
-                    startActivity(intent);
-                    finish();
+                        saveUserSession(UID, name, userType);
+                        runOnUiThread(() -> {
+                            Toast.makeText(RegisterActivity.this, successMessage, Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(RegisterActivity.this, RouteActivity.class));
+                            finish();
+                        });
+                    } catch (Exception e) {
+                        Log.e("RegisterActivity", "Error al parsear JSON de respuesta", e);
+                        runOnUiThread(() -> Toast.makeText(RegisterActivity.this, "Error al analizar la respuesta del servidor", Toast.LENGTH_SHORT).show());
+                    }
                 } else {
+                    Log.w("RegisterActivity", "Registro fallido con código: " + response.code());
                     runOnUiThread(() -> Toast.makeText(RegisterActivity.this, responseMessage, Toast.LENGTH_SHORT).show());
                 }
             }
         });
     }
+
 
     private String createRegisterJson(String name, String email, String password, String phone, String plate, String model, String color) {
         return userType.equals("driver") ?
